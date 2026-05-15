@@ -1,0 +1,69 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #131313;
+  --color-surface-dim: #131313;
+  --color-surface-bright: #393939;
+  --color-surface-container-lowest: #0e0e0e;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container: #201f1f;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #009641;
+
+  --color-primary: #e63612;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #e63612;
+  --color-on-primary-container: #ffffff;
+
+  --color-secondary: #009641;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #009641;
+  --color-on-secondary-container: #ffffff;
+
+  --color-tertiary: #ffd802;
+  --color-on-tertiary: #1a1200;
+  --color-tertiary-container: #ffd802;
+  --color-on-tertiary-container: #1a1200;
+
+  --color-error: #009641;
+  --color-error-container: #009641;
+
+  --font-montserrat: "Montserrat", sans-serif;
+
+  --radius-xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-montserrat;
+  }
+}
+
+@layer components {
+  .gold-border {
+    border: 2px solid;
+    border-image-source: linear-gradient(
+      135deg,
+      #ffd802 0%,
+      #ffed4e 50%,
+      #ffd802 100%
+    );
+    border-image-slice: 1;
+  }
+}
+
+.gold-glow {
+  box-shadow: 0 0 15px rgba(255, 216, 2, 0.4);
+}
+
+.dragon-watermark {
+  background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBM7iTHoD8oD2Lc0t3tqsA8NRNbrTztLL1Ei_UCFlKWIRAkfjefx_OFbeO246Qxt8P3G8rj9IY0iA7IOKIr1ulRb47SBUdh39W8_E-02c7RlPkYKTJQnlcBzkRnyFNrgrQcLvMoO9FHQfit787p3wip_aUJUDj4Cf5WZ0EavFPhXo5gNXbnwI5N1_nyQbN9k-hDy-z_pjyU5Le08rsMF-ZwvBMksVsG5eybL75_GCh6-jJYoDESqCAGUbNaLgiKYUfgD_qkmKdK88oS");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
+  opacity: 0.05;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Tichu Score Keeper",
+  "description": "A scorekeeping companion for Tichu games with team statistics and history tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
