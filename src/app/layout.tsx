@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="antialiased font-montserrat">
         <div className="min-h-screen flex flex-col bg-surface overflow-x-hidden">
           <Header />
-          <main className="flex-grow pt-24 pb-32 max-w-7xl mx-auto px-4 w-full">
+          <main className="flex-grow pt-20 md:pt-24 pb-32 max-w-7xl mx-auto px-4 w-full">
             {children}
           </main>
           <Footer />

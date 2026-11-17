@@ -17,7 +17,7 @@ export function Header() {
 
   return (
     <header className="bg-surface border-b border-outline-variant shadow-md fixed top-0 w-full z-50">
-      <div className="flex justify-between items-center px-6 h-20 w-full max-w-7xl mx-auto">
+      <div className="flex justify-between items-center px-4 md:px-6 h-16 md:h-20 w-full max-w-7xl mx-auto">
         <Link href="/">
           <div className="text-2xl font-bold text-tertiary tracking-wider uppercase">TICHU</div>
         </Link>
@@ -77,7 +77,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 md:hidden flex justify-around items-center px-4 py-2 bg-surface-container border-t border-outline-variant shadow-lg">
+    <nav className="mobile-nav fixed bottom-0 left-0 w-full z-50 md:hidden flex justify-around items-center px-4 py-2 bg-surface-container border-t border-outline-variant shadow-lg">
       <Link href="/" className={cn("flex flex-col items-center p-2 text-on-surface-variant", pathname === "/" && "text-tertiary")}>
         <LayoutDashboard size={20} />
         <span className="text-[10px] font-bold mt-1">Home</span>

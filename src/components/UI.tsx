@@ -64,27 +64,29 @@ export function ScoreInput({ value, onChange, label, colorClass }: {
   label: string;
   colorClass: string;
 }) {
+  const borderClass = colorClass.replace('text-', 'border-');
+  const stepBtn = cn(
+    "shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border text-xl font-bold flex items-center justify-center hover:bg-surface-container-highest active:scale-95 transition-all",
+    borderClass
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      <label className={cn("text-sm font-bold text-center uppercase tracking-widest", colorClass)}>{label}</label>
-      <div className="flex items-center justify-center gap-4">
-        <button 
-          onClick={() => onChange(value - 5)}
-          className={cn("w-12 h-12 rounded-full border flex items-center justify-center hover:bg-surface-container-highest transition-colors", colorClass.replace('text-', 'border-'))}
-        >
-          <span className="material-symbols-outlined">-</span>
+    // Mobile: one compact row (label | - input +). Desktop: stacked.
+    <div className="flex flex-row md:flex-col items-center md:items-stretch gap-2 md:gap-4">
+      <label className={cn("flex-1 min-w-0 truncate text-xs md:text-sm font-bold md:text-center uppercase tracking-widest", colorClass)}>{label}</label>
+      <div className="flex items-center justify-center gap-2 md:gap-4">
+        <button type="button" aria-label={`${label} -5`} onClick={() => onChange(value - 5)} className={stepBtn}>
+          −
         </button>
         <input 
           type="number" 
           value={value}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-          className="bg-surface-container-highest border-2 border-tertiary text-on-surface text-center w-24 h-16 text-2xl font-bold rounded-lg focus:ring-0 focus:border-tertiary"
+          className="bg-surface-container-highest border-2 border-tertiary text-on-surface text-center w-20 h-10 md:w-24 md:h-16 text-xl md:text-2xl font-bold rounded-lg focus:ring-0 focus:border-tertiary"
         />
-        <button 
-          onClick={() => onChange(value + 5)}
-          className={cn("w-12 h-12 rounded-full border flex items-center justify-center hover:bg-surface-container-highest transition-colors", colorClass.replace('text-', 'border-'))}
-        >
-          <span className="material-symbols-outlined">+</span>
+        <button type="button" aria-label={`${label} +5`} onClick={() => onChange(value + 5)} className={stepBtn}>
+          +
         </button>
       </div>
     </div>
