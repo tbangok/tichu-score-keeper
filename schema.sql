@@ -5,7 +5,6 @@ CREATE TABLE teams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
-  pin_hash TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

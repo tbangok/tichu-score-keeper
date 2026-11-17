@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, UserPlus, Flag, ChevronRight, ChevronLeft, ShieldCheck, Play } from 'lucide-react';
+import { Users, Flag, ChevronRight, ChevronLeft, Play } from 'lucide-react';
 import { Card, Button } from '@/components/UI';
 import { supabase } from '@/lib/supabase';
 import { GameMode, Team } from '@/types';
-import { validateUsername, validatePin, hashPin, cn } from '@/lib/utils';
+import { validateUsername, cn } from '@/lib/utils';
 
 function NewGameContent() {
   const router = useRouter();
@@ -19,117 +19,74 @@ function NewGameContent() {
   const [teamSelections, setTeamSelections] = useState<any[]>([]);
   const [currentTeamIdx, setCurrentTeamIdx] = useState(0);
   
-  // Search/Verification state
+  // Username entry state
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<Team | null | 'new'>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const numTeams = mode === GameMode.TWO_TEAMS ? 2 : 3;
 
   useEffect(() => {
-    // If we have an existing team index in state, reset selection inputs
-    setUsername('');
-    setDisplayName('');
-    setPin('');
-    setConfirmPin('');
-    setSearchResult(null);
+    // Prefill with the already chosen team for this slot (if any)
+    setUsername(teamSelections[currentTeamIdx]?.username ?? '');
     setError('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTeamIdx]);
 
-  const handleSearch = async () => {
-    if (!validateUsername(username)) {
+  const findTeam = async (name: string): Promise<Team | null> => {
+    const { data, error: sbError } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('username', name)
+      .maybeSingle();
+    if (sbError) throw sbError;
+    return data;
+  };
+
+  // Look up the team by username; silently create it if it doesn't exist yet.
+  const handleNext = async () => {
+    const name = username.trim();
+    if (!validateUsername(name)) {
       setError('Username must be 3-30 lowercase characters, numbers or underscores.');
       return;
     }
-    
-    // Check if this username is already selected for another position
-    if (teamSelections.some((t, i) => i !== currentTeamIdx && t?.username === username)) {
+
+    if (teamSelections.some((t, i) => i !== currentTeamIdx && t?.username === name)) {
       setError('This team is already selected.');
       return;
     }
 
-    setIsSearching(true);
+    setIsSubmitting(true);
     setError('');
-    
+
     try {
-      const { data, error: sbError } = await supabase
-        .from('teams')
-        .select('*')
-        .eq('username', username)
-        .maybeSingle();
-      
-      if (sbError) throw sbError;
-      
-      if (data) {
-        setSearchResult(data);
-        setDisplayName(data.display_name);
-      } else {
-        setSearchResult('new');
-        setDisplayName('');
-      }
-    } catch (err) {
-      setError('Error searching for team.');
-    } finally {
-      setIsSearching(false);
-    }
-  };
+      let team = await findTeam(name);
 
-  const handleVerifyOrJoin = async () => {
-    if (!validatePin(pin)) {
-      setError('PIN must be 4-8 digits.');
-      return;
-    }
-
-    if (searchResult === 'new') {
-      if (pin !== confirmPin) {
-        setError('PINs do not match.');
-        return;
-      }
-      if (!displayName.trim()) {
-        setError('Display name is required.');
-        return;
-      }
-
-      try {
+      if (!team) {
         const { data: newTeam, error: createError } = await supabase
           .from('teams')
-          .insert({
-            username,
-            display_name: displayName,
-            pin_hash: hashPin(pin)
-          })
+          .insert({ username: name, display_name: name })
           .select()
           .single();
 
-        if (createError) throw createError;
-        
-        finishSelection(newTeam);
-      } catch (err: any) {
-        setError(err.message || 'Error creating team.');
-      }
-    } else if (searchResult) {
-      // Verify PIN
-      try {
-        const { data, error: verifyError } = await supabase
-          .from('teams')
-          .select('pin_hash')
-          .eq('id', searchResult.id)
-          .single();
-        
-        if (verifyError) throw verifyError;
-        
-        if (data.pin_hash === hashPin(pin)) {
-          finishSelection(searchResult);
+        if (createError) {
+          // Someone else may have created it at the same moment
+          if (createError.code === '23505') {
+            team = await findTeam(name);
+          } else {
+            throw createError;
+          }
         } else {
-          setError('Invalid PIN.');
+          team = newTeam;
         }
-      } catch (err) {
-        setError('Error verifying PIN.');
       }
+
+      if (!team) throw new Error('Could not load team.');
+      finishSelection(team);
+    } catch (err: any) {
+      setError(err?.message || 'Error loading team.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -274,105 +231,37 @@ function NewGameContent() {
                 </div>
               </div>
 
-              {!searchResult ? (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Enter Team Username</label>
-                    <input 
-                      className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-4 text-xl font-bold focus:border-tertiary outline-none"
-                      placeholder="dragon_team"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                      disabled={isSearching}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                  </div>
-                  {error && <p className="text-error text-sm font-bold">{error}</p>}
-                  <Button fullWidth onClick={handleSearch} disabled={isSearching} size="lg">
-                    {isSearching ? 'Searching...' : 'Search Team'}
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Team {currentTeamIdx + 1} Username</label>
+                  <input
+                    className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-4 text-xl font-bold focus:border-tertiary outline-none"
+                    placeholder="dragon_team"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                    disabled={isSubmitting}
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                  />
+                  <p className="text-xs text-on-surface-variant">New usernames are created automatically.</p>
+                </div>
+
+                {error && <p className="text-error text-sm font-bold">{error}</p>}
+
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                    onClick={() => (currentTeamIdx > 0 ? setCurrentTeamIdx(currentTeamIdx - 1) : setStep(1))}
+                  >
+                    <ChevronLeft size={20} /> Back
+                  </Button>
+                  <Button variant="primary" className="flex-[2]" onClick={handleNext} disabled={isSubmitting}>
+                    {isSubmitting ? 'Loading...' : currentTeamIdx < numTeams - 1 ? 'Next Team' : 'Review'} <ChevronRight size={20} />
                   </Button>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="p-4 bg-surface-container-highest rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-tertiary uppercase">Selection for Team {currentTeamIdx + 1}</p>
-                      <p className="text-xl font-bold">@{username}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setSearchResult(null)}>Change</Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {searchResult === 'new' ? (
-                      <>
-                        <div className="p-3 bg-secondary-container/20 border border-secondary/30 rounded-lg text-secondary text-sm flex items-center gap-2">
-                          <UserPlus size={16} /> New team detected! Create it below.
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase">Display Name</label>
-                          <input 
-                            className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-3 text-lg focus:border-tertiary outline-none"
-                            placeholder="The Golden Dragons"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-on-surface-variant uppercase">Set PIN (4-8 digits)</label>
-                            <input 
-                              type="password"
-                              className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-3 text-lg text-center tracking-[0.5em] focus:border-tertiary outline-none"
-                              value={pin}
-                              onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                              maxLength={8}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold text-on-surface-variant uppercase">Confirm PIN</label>
-                            <input 
-                              type="password"
-                              className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-3 text-lg text-center tracking-[0.5em] focus:border-tertiary outline-none"
-                              value={confirmPin}
-                              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
-                              maxLength={8}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="p-3 bg-primary-container/20 border border-primary/30 rounded-lg text-primary text-sm flex items-center gap-2">
-                          <ShieldCheck size={16} /> Existing team. Please enter PIN to join game.
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-on-surface-variant uppercase">Enter Team PIN</label>
-                          <input 
-                            type="password"
-                            className="w-full bg-surface-container-highest border border-outline-variant rounded-lg p-3 text-xl text-center tracking-[0.5em] focus:border-tertiary outline-none"
-                            value={pin}
-                            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                            maxLength={8}
-                            autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && handleVerifyOrJoin()}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {error && <p className="text-error text-sm font-bold">{error}</p>}
-                  
-                  <div className="flex gap-4">
-                    <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
-                       <ChevronLeft size={20} /> Back
-                    </Button>
-                    <Button variant="primary" className="flex-[2]" onClick={handleVerifyOrJoin}>
-                       {searchResult === 'new' ? 'Register & Next' : 'Verify & Next'} <ChevronRight size={20} />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              </div>
             </Card>
           )}
 
@@ -399,7 +288,7 @@ function NewGameContent() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Modify Teams</Button>
+                <Button variant="outline" className="flex-1" onClick={() => { setCurrentTeamIdx(0); setStep(2); }}>Modify Teams</Button>
                 <Button variant="primary" size="lg" className="flex-[2] gold-glow" onClick={startGame}>
                    BEGIN THE RITUAL <Play size={20} className="ml-2" />
                 </Button>
