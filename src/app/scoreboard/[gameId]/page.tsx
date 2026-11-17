@@ -185,22 +185,26 @@ export default function Scoreboard() {
   const potentialWinner = sortedByScore[0];
   const isCurrentlyDrawn = sortedByScore.length > 1 && sortedByScore[0].final_score === sortedByScore[1].final_score;
 
+  const teamGridCols = game.mode === GameMode.TWO_TEAMS ? "grid-cols-2" : "grid-cols-3";
+
   return (
-    <div className="space-y-12">
+    // On mobile the whole scoreboard fits in one screen (see `.scoreboard-fit` in globals.css);
+    // only the round history scrolls internally.
+    <div className="scoreboard-fit flex flex-col gap-2 max-md:h-[var(--scoreboard-fit-h)] md:gap-12">
       {/* Scoreboard Cards */}
-      <div className={cn("grid gap-8", game.mode === GameMode.TWO_TEAMS ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-3")}>
+      <div className={cn("grid shrink-0 gap-2 md:gap-8", teamGridCols)}>
         {gameTeams.map((gt, idx) => {
           const lastRoundScore = rounds[0]?.scores?.find(s => s.team_id === gt.team_id)?.score_change || 0;
           const labelColor = idx === 0 ? "text-primary" : (idx === 1 ? "text-secondary" : "text-tertiary");
           return (
-            <Card key={gt.id} gold={gt.final_score === maxScore && maxScore > 0} className="relative overflow-hidden shadow-2xl">
+            <Card key={gt.id} gold={gt.final_score === maxScore && maxScore > 0} className="relative overflow-hidden shadow-2xl max-md:p-2 max-md:rounded-lg">
               <div className="absolute inset-0 dragon-watermark pointer-events-none" />
-              <div className="flex flex-col items-center relative z-10">
-                <span className={cn("text-xs font-bold uppercase tracking-[0.2em] mb-2", labelColor)}>{gt.team.display_name}</span>
-                <h2 className="text-6xl md:text-7xl font-bold font-display text-on-surface">{gt.final_score}</h2>
-                <div className="mt-4 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Last Round</span>
-                  <span className={cn("text-lg font-bold", lastRoundScore > 0 ? "text-secondary" : (lastRoundScore < 0 ? "text-error" : "text-on-surface-variant"))}>
+              <div className="flex flex-col items-center relative z-10 min-w-0">
+                <span className={cn("max-w-full truncate text-[10px] md:text-xs font-bold uppercase tracking-widest md:tracking-[0.2em] mb-1 md:mb-2", labelColor)}>{gt.team.display_name}</span>
+                <h2 className="text-3xl md:text-7xl font-bold font-display text-on-surface leading-none">{gt.final_score}</h2>
+                <div className="mt-1 md:mt-4 flex md:flex-col items-center gap-1">
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest max-md:hidden">Last Round</span>
+                  <span className={cn("text-xs md:text-lg font-bold", lastRoundScore > 0 ? "text-secondary" : (lastRoundScore < 0 ? "text-error" : "text-on-surface-variant"))}>
                     {lastRoundScore > 0 ? `+${lastRoundScore}` : lastRoundScore}
                   </span>
                 </div>
@@ -211,7 +215,7 @@ export default function Scoreboard() {
       </div>
 
       {/* Progress Bar */}
-      <div className="relative h-4 bg-surface-container-high rounded-full overflow-hidden shadow-inner">
+      <div className="relative shrink-0 h-3 md:h-4 bg-surface-container-high rounded-full overflow-hidden shadow-inner">
         <div 
           className="absolute h-full bg-gradient-to-r from-primary via-tertiary to-secondary transition-all duration-1000"
           style={{ width: `${progressPercent}%` }}
@@ -223,9 +227,9 @@ export default function Scoreboard() {
       </div>
 
       {/* Round Score Entry */}
-      <Card className="bg-surface-container-low p-8 border border-outline-variant shadow-inner">
-        <h3 className="text-2xl font-bold mb-8 text-center uppercase tracking-widest">Score Round {rounds.length + 1}</h3>
-        <div className={cn("grid gap-8 items-center", game.mode === GameMode.TWO_TEAMS ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-3")}>
+      <Card className="shrink-0 bg-surface-container-low p-3 md:p-8 border border-outline-variant shadow-inner max-md:rounded-lg">
+        <h3 className="text-sm md:text-2xl font-bold mb-2 md:mb-8 text-center uppercase tracking-widest">Score Round {rounds.length + 1}</h3>
+        <div className={cn("grid gap-2 md:gap-8 items-center grid-cols-1", game.mode === GameMode.TWO_TEAMS ? "md:grid-cols-2" : "md:grid-cols-3")}>
           {gameTeams.map((gt, idx) => (
              <ScoreInput 
                key={gt.id}
@@ -236,42 +240,42 @@ export default function Scoreboard() {
              />
           ))}
         </div>
-        <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-          <Button variant="primary" size="lg" className="sm:flex-1 gold-glow" onClick={handleAddRound}>
+        <div className="mt-2 md:mt-12 flex flex-row gap-2 md:gap-4 justify-center">
+          <Button variant="primary" size="lg" className="flex-[2] md:flex-1 gold-glow max-md:px-4 max-md:py-2.5 max-md:text-base" onClick={handleAddRound}>
             Add Round
           </Button>
-          <Button variant="outline" size="lg" className="sm:flex-1" onClick={() => setShowEndModal(true)}>
-            Manual End
+          <Button variant="outline" size="lg" className="flex-1 max-md:px-3 max-md:py-2.5 max-md:text-sm whitespace-nowrap" onClick={() => setShowEndModal(true)}>
+            <span className="max-md:hidden">Manual End</span><span className="md:hidden">End Game</span>
           </Button>
         </div>
       </Card>
 
-      {/* History Area */}
-      <Card className="p-0 overflow-hidden">
-        <div className="px-6 py-4 bg-surface-container-high flex justify-between items-center border-b border-outline-variant">
+      {/* History Area — fills the remaining space on mobile and scrolls internally */}
+      <Card className="p-0 overflow-hidden flex flex-col max-md:flex-1 max-md:min-h-0 max-md:rounded-lg">
+        <div className="shrink-0 px-3 py-2 md:px-6 md:py-4 bg-surface-container-high flex justify-between items-center border-b border-outline-variant">
           <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Round History</h4>
-          <Button variant="outline" size="sm" onClick={handleUndoRound} disabled={rounds.length === 0}>
-            <Undo size={14} className="mr-2" /> Undo Last Round
+          <Button variant="outline" size="sm" className="max-md:px-2 max-md:py-1" onClick={handleUndoRound} disabled={rounds.length === 0}>
+            <Undo size={14} className="md:mr-2" /> <span className="max-md:hidden">Undo Last Round</span><span className="md:hidden">Undo</span>
           </Button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-md:flex-1 max-md:min-h-0 overscroll-contain">
           <table className="w-full text-left">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-[0.2em] text-outline bg-surface-container-highest">
-                <th className="px-6 py-4">Rd</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="text-[10px] uppercase tracking-wider md:tracking-[0.2em] text-outline bg-surface-container-highest">
+                <th className="px-3 py-2 md:px-6 md:py-4">Rd</th>
                 {gameTeams.map(gt => (
-                  <th key={gt.id} className="px-6 py-4">{gt.team.display_name}</th>
+                  <th key={gt.id} className="px-3 py-2 md:px-6 md:py-4 truncate max-w-[5.5rem] md:max-w-none">{gt.team.display_name}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/30">
               {rounds.map((round) => (
                 <tr key={round.id} className="hover:bg-surface-container-high transition-colors">
-                  <td className="px-6 py-4 font-bold text-outline">{round.round_number}</td>
+                  <td className="px-3 py-2 md:px-6 md:py-4 font-bold text-outline">{round.round_number}</td>
                   {gameTeams.map(gt => {
                     const score = round.scores?.find(s => s.team_id === gt.team_id)?.score_change || 0;
                     return (
-                      <td key={gt.id} className={cn("px-6 py-4 font-bold text-lg", score > 0 ? "text-secondary" : (score < 0 ? "text-error" : "text-on-surface-variant"))}>
+                      <td key={gt.id} className={cn("px-3 py-2 md:px-6 md:py-4 font-bold text-base md:text-lg", score > 0 ? "text-secondary" : (score < 0 ? "text-error" : "text-on-surface-variant"))}>
                         {score > 0 ? `+${score}` : score}
                       </td>
                     );
@@ -280,7 +284,7 @@ export default function Scoreboard() {
               ))}
               {rounds.length === 0 && (
                 <tr>
-                  <td colSpan={gameTeams.length + 1} className="px-6 py-12 text-center text-on-surface-variant italic">
+                  <td colSpan={gameTeams.length + 1} className="px-3 py-6 md:px-6 md:py-12 text-center text-on-surface-variant italic text-sm md:text-base">
                     The ritual has just begun. No rounds recorded yet.
                   </td>
                 </tr>

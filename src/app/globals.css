@@ -67,3 +67,19 @@
   background-size: 80%;
   opacity: 0.05;
 }
+
+/* Scoreboard: on phones, fit everything into one screen (no page scroll).
+   Header is h-16 (4rem) on mobile; bottom nav and footer are hidden in-game. */
+@media (max-width: 767px) {
+  body:has(.scoreboard-fit) {
+    --scoreboard-fit-h: calc(100dvh - 4rem - 1.5rem - env(safe-area-inset-bottom));
+  }
+  body:has(.scoreboard-fit) main {
+    padding-top: calc(4rem + 0.75rem);
+    padding-bottom: 0;
+  }
+  body:has(.scoreboard-fit) footer,
+  body:has(.scoreboard-fit) .mobile-nav {
+    display: none;
+  }
+}
