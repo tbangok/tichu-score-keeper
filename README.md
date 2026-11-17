@@ -16,8 +16,7 @@ Tichu Score Keeper is designed for serious players who want to maintain detailed
 - **Game Status**: Track ongoing games and resume where you left off
 
 ### 👥 Team Management
-- **Team Creation**: Create new teams with unique usernames and secure PIN protection
-- **Team Verification**: Existing team members verify with PIN to join games
+- **Instant Teams**: Just type a username — existing teams are picked up, new ones are created automatically (no login, no PIN)
 - **Team Identity**: Display names and usernames for easy team recognition
 
 ### 📊 Analytics & History
@@ -40,7 +39,6 @@ Tichu Score Keeper is designed for serious players who want to maintain detailed
 - **Database**: Supabase (PostgreSQL)
 - **Styling**: Tailwind CSS with custom theme
 - **Icons**: Lucide React
-- **Authentication**: PIN-based team verification
 - **Hosting**: Ready for Vercel or Cloud Run
 
 ## Prerequisites
@@ -119,9 +117,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to start pla
 2. **Choose Game Mode**: Select between 2-team (classic) or 3-team (battle)
 3. **Set Target Score**: Choose 500 or 1000 points
 4. **Define Teams**: For each team position:
-   - Enter a team username
-   - If new: create display name and PIN
-   - If existing: verify with PIN
+   - Enter a team username and press Next
+   - If the username doesn't exist yet, it is created automatically
 5. **Review & Start**: Confirm all settings and begin the game
 
 ### During the Game
@@ -172,7 +169,7 @@ tichu-score-keeper/
 
 The app uses the Supabase JavaScript client to interact with the database. Key tables:
 
-- **teams** — Team information and PIN hashes
+- **teams** — Team usernames and display names
 - **games** — Game records with metadata
 - **game_teams** — Team participation in games
 - **rounds** — Individual round records
@@ -182,10 +179,9 @@ All queries include proper RLS (Row Level Security) policies for data safety.
 
 ## Security
 
-- **PIN Protection**: Team PINs are hashed before storage (never stored in plain text)
 - **Row Level Security**: Supabase RLS policies control data access
 - **Publishable Key**: Frontend uses Supabase publishable key (safe for public exposure)
-- **Data Validation**: Input validation on usernames, PINs, and scores
+- **Data Validation**: Input validation on usernames and scores
 
 ## Troubleshooting
 
@@ -194,9 +190,8 @@ All queries include proper RLS (Row Level Security) policies for data safety.
 - Check that your Supabase project is active
 - Ensure the project URL is correct (should include your project subdomain)
 
-### PIN Verification Fails
-- PINs are hashed before comparison—re-create the team if PIN is forgotten
-- Ensure only 4-8 digits are entered for the PIN
+### Upgrading an Existing Database
+- If your `teams` table still has a `pin_hash` column, run `migrations/001_remove_team_pin.sql` in the Supabase SQL Editor
 
 ### Database Tables Not Found
 - Run `schema.sql` in Supabase SQL Editor to create tables
